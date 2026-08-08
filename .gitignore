@@ -1,0 +1,5 @@
+# Map data and build caches stay local.
+data/*
+!data/.gitkeep
+.env
+*.swp

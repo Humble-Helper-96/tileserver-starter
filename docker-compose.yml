@@ -1,0 +1,16 @@
+# TileServer GL with local styles, fonts, and sprites.
+# Put your mbtiles files in ./data before you start the server.
+#
+# The server stops if a configured mbtiles file is missing.
+# Use config.json when you have all three data files.
+# Use config-basic.json when you only have basemap.mbtiles.
+services:
+  tileserver:
+    image: maptiler/tileserver-gl:latest
+    container_name: tileserver
+    restart: unless-stopped
+    ports:
+      - "${TILESERVER_PORT:-8080}:8080"
+    volumes:
+      - ./:/data:ro
+    command: --config /data/${TILESERVER_CONFIG:-config.json}
