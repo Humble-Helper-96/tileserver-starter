@@ -26,7 +26,7 @@ Works well as a map source for TAK clients (ATAK, WinTAK, iTAK) and web maps.
 1. Clone this repository:
 
    ```bash
-   git clone <REPO_URL>
+   git clone https://github.com/Humble-Helper-96/tileserver-starter.git
    cd tileserver-starter
    ```
 
