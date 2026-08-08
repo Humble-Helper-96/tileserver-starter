@@ -1706,5 +1706,12 @@
     "width": 34,
     "x": 640,
     "y": 296
+  },
+  "oneway": {
+    "x": 0,
+    "y": 498,
+    "width": 24,
+    "height": 10,
+    "pixelRatio": 2
   }
 }
