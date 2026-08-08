@@ -69,6 +69,8 @@ To change the port, copy `.env.example` to `.env` and edit it.
 Builds `data/basemap.mbtiles` with [Planetiler](https://github.com/onthegomap/planetiler).
 Planetiler downloads the OpenStreetMap extract for the area from Geofabrik.
 The output uses the OpenMapTiles schema.
+The first run downloads about 1.5 GB of shared world data (coastlines, lakes).
+This data stays in `data/sources` for the next runs.
 Large areas need more memory: `PLANETILER_MEMORY=8g ./scripts/build-vector.sh germany`.
 
 ### `build-contours.sh <min-lon> <min-lat> <max-lon> <max-lat> [m|ft]`
