@@ -384,8 +384,15 @@
         "text-field": [
           "to-string",
           [
-            "get",
-            "elev"
+            "coalesce",
+            [
+              "get",
+              "elev_ft"
+            ],
+            [
+              "get",
+              "elev_m"
+            ]
           ]
         ],
         "text-font": [

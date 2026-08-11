@@ -11,9 +11,13 @@
 #   ft = feet. Minor interval 40 ft, major interval 200 ft.
 #
 # Output tile schema:
-#   Layer "contours_major": lines, attribute "elev" (number), zoom 8-14.
-#   Layer "contours_minor": lines, attribute "elev" (number), zoom 11-14.
-# The "elev" value is in the selected units.
+#   Layer "contours_major": lines, zoom 8-14.
+#   Layer "contours_minor": lines, zoom 11-14.
+# The elevation attribute name states the units:
+#   "elev_m" (number) when you build in meters.
+#   "elev_ft" (integer) when you build in feet.
+# This matches the terrain_builder project. Its mbtiles files are a
+# drop-in replacement for data/contours.mbtiles.
 
 set -euo pipefail
 
@@ -32,8 +36,8 @@ MIN_LON="$1" MIN_LAT="$2" MAX_LON="$3" MAX_LAT="$4"
 UNITS="${5:-m}"
 
 case "$UNITS" in
-    m)  MINOR=20; MAJOR=100 ;;
-    ft) MINOR=40; MAJOR=200 ;;
+    m)  MINOR=20; MAJOR=100; ELEV_ATTR="elev_m" ;;
+    ft) MINOR=40; MAJOR=200; ELEV_ATTR="elev_ft" ;;
     *)  echo "Error: units must be 'm' or 'ft'." >&2; exit 1 ;;
 esac
 
@@ -62,17 +66,23 @@ echo "Step 3/5: compute contour lines (interval $MINOR $UNITS)"
 gdal_contour -q -a elev -i "$MINOR" "$DEM_INPUT" "$WORK_DIR/contours.gpkg" -nln contour
 
 echo "Step 4/5: split major and minor contours"
+# Feet values are whole interval multiples. Store them as integers.
+if [ "$UNITS" = "ft" ]; then
+    SELECT="CAST(ROUND(elev) AS INTEGER) AS $ELEV_ATTR, geom"
+else
+    SELECT="elev AS $ELEV_ATTR, geom"
+fi
 ogr2ogr -f GeoJSONSeq "$WORK_DIR/major.json" "$WORK_DIR/contours.gpkg" \
-    -dialect SQLITE -sql "SELECT elev, geom FROM contour WHERE CAST(elev AS INTEGER) % $MAJOR = 0"
+    -dialect SQLITE -sql "SELECT $SELECT FROM contour WHERE CAST(ROUND(elev) AS INTEGER) % $MAJOR = 0"
 ogr2ogr -f GeoJSONSeq "$WORK_DIR/minor.json" "$WORK_DIR/contours.gpkg" \
-    -dialect SQLITE -sql "SELECT elev, geom FROM contour WHERE CAST(elev AS INTEGER) % $MAJOR <> 0"
+    -dialect SQLITE -sql "SELECT $SELECT FROM contour WHERE CAST(ROUND(elev) AS INTEGER) % $MAJOR <> 0"
 
 echo "Step 5/5: build the vector tiles"
 tippecanoe -q -f -o "$WORK_DIR/major.mbtiles" -l contours_major \
-    -Z8 -z14 -y elev --drop-densest-as-needed \
+    -Z8 -z14 -y "$ELEV_ATTR" --drop-densest-as-needed \
     -A "Copernicus DEM (c) ESA" "$WORK_DIR/major.json"
 tippecanoe -q -f -o "$WORK_DIR/minor.mbtiles" -l contours_minor \
-    -Z11 -z14 -y elev --drop-densest-as-needed \
+    -Z11 -z14 -y "$ELEV_ATTR" --drop-densest-as-needed \
     -A "Copernicus DEM (c) ESA" "$WORK_DIR/minor.json"
 tile-join -f -o "$REPO_DIR/data/contours.mbtiles" -n "Contours ($UNITS)" \
     "$WORK_DIR/major.mbtiles" "$WORK_DIR/minor.mbtiles"

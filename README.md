@@ -98,8 +98,14 @@ Put your own files in `data/` with these names:
 | File | Type | Content |
 |---|---|---|
 | `data/basemap.mbtiles` | vector | OpenMapTiles schema base map |
-| `data/contours.mbtiles` | vector | layers `contours_major` and `contours_minor`, attribute `elev` |
+| `data/contours.mbtiles` | vector | layers `contours_major` and `contours_minor`, attribute `elev_ft` (feet) or `elev_m` (meters) |
 | `data/hillshade.mbtiles` | raster | gray hillshade PNG tiles |
+
+The contour labels read `elev_ft` first, then `elev_m`.
+`ft` builds write `elev_ft`. `m` builds write `elev_m`.
+Contour files from the [terrain_builder](https://github.com/Humble-Helper-96/terrain_builder)
+project carry both attributes. They are a drop-in replacement for
+`data/contours.mbtiles`.
 
 ## Use with TAK clients
 
@@ -116,6 +122,26 @@ For higher resolution screens, use `.../{z}/{x}/{y}@2x.png`.
 ## Start at boot
 
 See [systemd/README.md](systemd/README.md).
+
+## Changelog
+
+### v0.2
+
+Breaking change: the contour elevation attribute now states its units.
+`ft` builds write `elev_ft`. `m` builds write `elev_m`.
+Before, both modes wrote one ambiguous `elev` attribute.
+This makes contour files from the
+[terrain_builder](https://github.com/Humble-Helper-96/terrain_builder)
+project a drop-in replacement.
+
+**Migration:** rebuild your `data/contours.mbtiles` with
+`./scripts/build-contours.sh`, or replace it with a terrain_builder file.
+A contours file from v0.1 still draws contour lines, but the elevation
+labels render blank.
+
+### v0.1
+
+First public release.
 
 ## Attribution and licenses
 
