@@ -24,10 +24,17 @@ AREA="$1"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 MEMORY="${PLANETILER_MEMORY:-2g}"
 
+# shellcheck source=lib.sh
+source "$REPO_DIR/scripts/lib.sh"
 mkdir -p "$REPO_DIR/data"
+trap 'disk_full_hint "$REPO_DIR/data"' ERR
+# The extract size is unknown until Planetiler downloads it. Ask for a
+# baseline that covers a mid-sized country or a US state.
+require_free_space "$REPO_DIR/data" 15 "the base map build"
 
 # Planetiler writes the mbtiles file and keeps downloaded sources in data/sources.
 docker run --rm \
+    --user "$(id -u):$(id -g)" \
     -e JAVA_TOOL_OPTIONS="-Xmx$MEMORY" \
     -v "$REPO_DIR/data":/data \
     ghcr.io/onthegomap/planetiler:latest \

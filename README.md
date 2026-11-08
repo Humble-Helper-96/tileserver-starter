@@ -21,6 +21,22 @@ Works well as a map source for TAK clients (ATAK, WinTAK, iTAK) and web maps.
 - Docker with the Compose plugin
 - Disk space for your map data (a small country is 1-2 GB; a US state can be 1-10 GB)
 
+### Disk space
+
+Building needs much more space than the finished files take. Each build
+script estimates what its step needs and stops with a clear message if the
+drive is too small. As a guide, from a six-state build (NJ, NY, PA, MD, DE,
+DC, about 64 square degrees):
+
+| Step | Finished file | Working space needed |
+|---|---|---|
+| Base map | ~1 GB | ~15 GB |
+| Contours | ~2 GB | ~40 GB |
+| Hillshade | ~0.5 GB | ~15 GB |
+
+If a build fails anyway and the drive is full, the script says so. Free up
+space and run the same command again. Finished downloads are kept and reused.
+
 ## Quick start
 
 1. Clone this repository:
@@ -33,6 +49,8 @@ Works well as a map source for TAK clients (ATAK, WinTAK, iTAK) and web maps.
 2. Build the base map for your region.
    Use an area name from [Geofabrik](https://download.geofabrik.de).
    Example with Switzerland:
+   (For a region that spans several Geofabrik areas, such as a group of
+   US states, use `build-region.sh` instead. See "Build scripts" below.)
 
    ```bash
    ./scripts/build-vector.sh switzerland
@@ -90,6 +108,50 @@ Builds `data/hillshade.mbtiles` from the same elevation data.
 The terrain scripts build a small tool container (GDAL + Tippecanoe) on first run.
 Downloaded elevation tiles stay in `data/cache/dem` for reuse.
 
+### `build-region.sh <region-file> [vector] [contours] [hillshade]`
+
+Builds all three data files for a region described in a region file.
+A region can cover several Geofabrik extracts, for example several US states.
+The script downloads each extract, merges them into one file with Osmium,
+and runs Planetiler on the merged file. Then it builds contours and hillshade
+for the region's bounding box.
+
+```bash
+./scripts/build-region.sh regions/mid-atlantic.env
+```
+
+Add step names to run only some steps:
+
+```bash
+./scripts/build-region.sh regions/mid-atlantic.env contours hillshade
+```
+
+A region file sets these values (see `regions/mid-atlantic.env`):
+
+| Variable | Meaning |
+|---|---|
+| `REGION_NAME` | Short name for the merged OSM file |
+| `GEOFABRIK_AREAS` | Geofabrik paths, for example `north-america/us/new-jersey` |
+| `BBOX` | Terrain box: `min-lon min-lat max-lon max-lat` |
+| `CONTOUR_UNITS` | `ft` or `m` (default `ft`) |
+| `PLANETILER_MEMORY` | Java heap for Planetiler (default `8g`) |
+
+Planetiler output is limited to the region's `BBOX`.
+
+Planetiler also needs three shared inputs (water polygons, Natural Earth,
+lake centerlines). The script downloads them to `data/sources` before it runs
+Planetiler, so Planetiler itself makes no network calls. Each URL gets several
+attempts. If the primary source still fails, the script tries the next URL in
+the `SHARED_SOURCES` list at the top of `build-region.sh`. The water polygons
+fall back to the North America mirror at `www.osmdata.org`. Files that are
+already present are reused. Add more mirrors to that list if a source is
+unreliable.
+
+### `merge-osm.sh <output-name> <geofabrik-path> ...`
+
+Downloads Geofabrik extracts to `data/sources/extracts` and merges them into
+`data/sources/<output-name>.osm.pbf`. `build-region.sh` calls it for you.
+
 ## Bring your own data
 
 You do not have to use the build scripts.
@@ -124,6 +186,26 @@ For higher resolution screens, use `.../{z}/{x}/{y}@2x.png`.
 See [systemd/README.md](systemd/README.md).
 
 ## Changelog
+
+### v0.3
+
+- New `build-region.sh` and `merge-osm.sh`: build all three data files for a
+  region that spans several Geofabrik extracts, from one region file.
+  First region file: `regions/mid-atlantic.env`.
+- `build-region.sh` downloads Planetiler's shared inputs itself, with retries
+  and a fallback mirror for the water polygons.
+- Planetiler output is limited to the region's bounding box.
+- Fix: the tool image failed to build because the GDAL base image lists an
+  Apache Arrow apt source whose signing key no longer verifies.
+- Build containers now run as the calling user, so files under `data/` are no
+  longer owned by root.
+- Every build step checks free disk space first and stops with a plain
+  message if there is not enough. A step that fails on a full disk says so.
+- Fix: terrain intermediates are now tiled BigTIFFs. Before, a large region
+  could fill the disk with a feet-converted DEM dozens of times its real size.
+
+**Migration:** if you built with an earlier version, files under `data/` are
+owned by root. Run `sudo chown -R "$USER:$USER" data` once.
 
 ### v0.2
 

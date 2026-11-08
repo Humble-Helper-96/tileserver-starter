@@ -43,6 +43,13 @@ esac
 
 DEM_DIR="$REPO_DIR/data/cache/dem"
 WORK_DIR="$REPO_DIR/data/cache/contours"
+trap 'disk_full_hint "$REPO_DIR/data"' ERR
+
+# Disk estimate: the elevation tiles, the feet-converted copy, the contour
+# lines, and the tile build each take space, scaling with the box area.
+AREA_DEG2="$(bbox_area "$MIN_LON" "$MIN_LAT" "$MAX_LON" "$MAX_LAT")"
+NEED_GB="$(python3 -c "print(max(8, int($AREA_DEG2 * 0.6 + 5)))")"
+require_free_space "$REPO_DIR/data" "$NEED_GB" "contours for a $AREA_DEG2 square-degree area"
 rm -rf "$WORK_DIR"
 mkdir -p "$WORK_DIR"
 
@@ -56,9 +63,15 @@ gdalbuildvrt -q -te "$MIN_LON" "$MIN_LAT" "$MAX_LON" "$MAX_LAT" \
 DEM_INPUT="$WORK_DIR/dem.vrt"
 if [ "$UNITS" = "ft" ]; then
     echo "Step 2b: convert elevation values to feet"
+    # Float32 halves the file size (gdal_calc defaults to Float64).
+    # BIGTIFF=YES lifts the 4 GB TIFF limit, which large regions exceed.
+    # TILED=YES is essential: gdal_calc writes in square blocks, and with
+    # a strip-based TIFF each partial strip write appends a new compressed
+    # copy of the strip, so the file grows to many times its real size.
     gdal_calc.py -A "$WORK_DIR/dem.vrt" --calc="A*3.28084" \
-        --outfile="$WORK_DIR/dem_ft.tif" \
-        --co COMPRESS=DEFLATE --quiet
+        --outfile="$WORK_DIR/dem_ft.tif" --type=Float32 \
+        --co COMPRESS=DEFLATE --co PREDICTOR=3 --co BIGTIFF=YES \
+        --co TILED=YES --co BLOCKXSIZE=512 --co BLOCKYSIZE=512 --quiet
     DEM_INPUT="$WORK_DIR/dem_ft.tif"
 fi
 
@@ -87,5 +100,6 @@ tippecanoe -q -f -o "$WORK_DIR/minor.mbtiles" -l contours_minor \
 tile-join -f -o "$REPO_DIR/data/contours.mbtiles" -n "Contours ($UNITS)" \
     "$WORK_DIR/major.mbtiles" "$WORK_DIR/minor.mbtiles"
 
+report_work_space "$WORK_DIR" "$REPO_DIR/data/contours.mbtiles"
 rm -rf "$WORK_DIR"
 echo "Done. Output: data/contours.mbtiles (units: $UNITS)"
