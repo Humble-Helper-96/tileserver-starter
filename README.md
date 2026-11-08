@@ -203,6 +203,8 @@ See [systemd/README.md](systemd/README.md).
   message if there is not enough. A step that fails on a full disk says so.
 - Fix: terrain intermediates are now tiled BigTIFFs. Before, a large region
   could fill the disk with a feet-converted DEM dozens of times its real size.
+- Fix: one-way arrows pointed across the road instead of along it, in all
+  four styles.
 
 **Migration:** if you built with an earlier version, files under `data/` are
 owned by root. Run `sudo chown -R "$USER:$USER" data` once.
