@@ -46,6 +46,7 @@ if [ ${#BBOX_ARGS[@]} -ne 4 ]; then
     echo "Error: BBOX must have 4 numbers: min-lon min-lat max-lon max-lat" >&2
     exit 1
 fi
+BBOX_CSV="$(IFS=,; echo "${BBOX_ARGS[*]}")"
 
 STEPS=("$@")
 if [ ${#STEPS[@]} -eq 0 ]; then
@@ -63,16 +64,32 @@ run_vector() {
     "$REPO_DIR/scripts/merge-osm.sh" "$REGION_NAME" $GEOFABRIK_AREAS
 
     echo "Planetiler: build data/basemap.mbtiles (Java heap $PLANETILER_MEMORY)"
-    # --download fetches only the inputs that are missing (water polygons,
-    # Natural Earth, lake centerlines). The OSM file already exists, so
-    # Planetiler uses it as is.
+
+    # Planetiler also needs three shared inputs. When all three are already
+    # in data/sources, skip --download so Planetiler makes no network calls.
+    # If a download keeps failing, fetch the file by hand into data/sources
+    # (see the README) and run the step again.
+    local sources="$REPO_DIR/data/sources"
+    local download_flag="--download"
+    if [ -s "$sources/water-polygons-split-3857.zip" ] \
+        && [ -s "$sources/natural_earth_vector.sqlite.zip" ] \
+        && [ -s "$sources/lake_centerline.shp.zip" ]; then
+        echo "Shared inputs found in data/sources: skipping Planetiler downloads."
+        download_flag=""
+    fi
+
+    # --bounds limits the output to the region box. Without it Planetiler
+    # takes the bounds from the merged OSM data, which can be far larger
+    # (extracts include complete ways and relations that reach outside).
+    # shellcheck disable=SC2086
     docker run --rm \
         -e JAVA_TOOL_OPTIONS="-Xmx$PLANETILER_MEMORY" \
         -v "$REPO_DIR/data":/data \
         ghcr.io/onthegomap/planetiler:latest \
-        --download \
+        $download_flag \
         --force \
         --osm-path="/data/sources/$REGION_NAME.osm.pbf" \
+        --bounds="$BBOX_CSV" \
         --tmpdir=/data/tmp \
         --output=/data/basemap.mbtiles
 }

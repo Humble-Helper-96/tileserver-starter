@@ -118,6 +118,18 @@ A region file sets these values (see `regions/mid-atlantic.env`):
 | `CONTOUR_UNITS` | `ft` or `m` (default `ft`) |
 | `PLANETILER_MEMORY` | Java heap for Planetiler (default `8g`) |
 
+Planetiler output is limited to the region's `BBOX`.
+
+Planetiler also needs three shared inputs in `data/sources`. It downloads them
+on the first run. If one download keeps failing, fetch it by hand and run the
+`vector` step again. When all three files are present, the script skips
+Planetiler's download step:
+
+```bash
+curl -fL -o data/sources/water-polygons-split-3857.zip \
+  https://osmdata.openstreetmap.de/download/water-polygons-split-3857.zip
+```
+
 ### `merge-osm.sh <output-name> <geofabrik-path> ...`
 
 Downloads Geofabrik extracts to `data/sources/extracts` and merges them into
