@@ -28,7 +28,8 @@ WORK_DIR="$REPO_DIR/data/cache/hillshade"
 trap 'disk_full_hint "$REPO_DIR/data"' ERR
 
 AREA_DEG2="$(bbox_area "$MIN_LON" "$MIN_LAT" "$MAX_LON" "$MAX_LAT")"
-NEED_GB="$(python3 -c "print(max(5, int($AREA_DEG2 * 0.2 + 3)))")"
+# Measured: 2 GB working space for a 64 square-degree region.
+NEED_GB="$(python3 -c "print(max(4, int($AREA_DEG2 * 0.06 + 2)))")"
 require_free_space "$REPO_DIR/data" "$NEED_GB" "hillshade for a $AREA_DEG2 square-degree area"
 rm -rf "$WORK_DIR"
 mkdir -p "$WORK_DIR"
