@@ -56,9 +56,11 @@ gdalbuildvrt -q -te "$MIN_LON" "$MIN_LAT" "$MAX_LON" "$MAX_LAT" \
 DEM_INPUT="$WORK_DIR/dem.vrt"
 if [ "$UNITS" = "ft" ]; then
     echo "Step 2b: convert elevation values to feet"
+    # Float32 halves the file size (gdal_calc defaults to Float64).
+    # BIGTIFF=YES lifts the 4 GB TIFF limit, which large regions exceed.
     gdal_calc.py -A "$WORK_DIR/dem.vrt" --calc="A*3.28084" \
-        --outfile="$WORK_DIR/dem_ft.tif" \
-        --co COMPRESS=DEFLATE --quiet
+        --outfile="$WORK_DIR/dem_ft.tif" --type=Float32 \
+        --co COMPRESS=DEFLATE --co BIGTIFF=YES --quiet
     DEM_INPUT="$WORK_DIR/dem_ft.tif"
 fi
 
