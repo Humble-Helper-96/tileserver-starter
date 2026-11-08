@@ -55,5 +55,6 @@ gdal_translate -q -of MBTILES -co TILE_FORMAT=PNG \
 # Add the lower zoom levels.
 gdaladdo -q -r average "$REPO_DIR/data/hillshade.mbtiles" 2 4 8 16 32 64
 
+report_work_space "$WORK_DIR" "$REPO_DIR/data/hillshade.mbtiles"
 rm -rf "$WORK_DIR"
 echo "Done. Output: data/hillshade.mbtiles"

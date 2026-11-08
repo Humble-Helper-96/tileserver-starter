@@ -100,5 +100,6 @@ tippecanoe -q -f -o "$WORK_DIR/minor.mbtiles" -l contours_minor \
 tile-join -f -o "$REPO_DIR/data/contours.mbtiles" -n "Contours ($UNITS)" \
     "$WORK_DIR/major.mbtiles" "$WORK_DIR/minor.mbtiles"
 
+report_work_space "$WORK_DIR" "$REPO_DIR/data/contours.mbtiles"
 rm -rf "$WORK_DIR"
 echo "Done. Output: data/contours.mbtiles (units: $UNITS)"

@@ -45,6 +45,16 @@ EOF
     echo "Disk check: $what needs about $need_gb GB; $avail_gb GB free. OK."
 }
 
+# Print how much working space a step used, so the estimates in
+# require_free_space can be checked against real builds.
+# Arguments: WORK_DIR OUTPUT_FILE
+report_work_space() {
+    local work_gb out_gb
+    work_gb="$(du -sBM "$1" 2>/dev/null | cut -f1 | tr -dc '0-9')"
+    out_gb="$(du -sBM "$2" 2>/dev/null | cut -f1 | tr -dc '0-9')"
+    echo "Working space used: $(( ${work_gb:-0} / 1024 )) GB; output file: $(( ${out_gb:-0} / 1024 )) GB."
+}
+
 # Called when a step fails. If the drive is (nearly) full, say so in plain
 # words, because the underlying tool errors are cryptic.
 # Argument: DIR
