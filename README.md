@@ -120,15 +120,14 @@ A region file sets these values (see `regions/mid-atlantic.env`):
 
 Planetiler output is limited to the region's `BBOX`.
 
-Planetiler also needs three shared inputs in `data/sources`. It downloads them
-on the first run. If one download keeps failing, fetch it by hand and run the
-`vector` step again. When all three files are present, the script skips
-Planetiler's download step:
-
-```bash
-curl -fL -o data/sources/water-polygons-split-3857.zip \
-  https://osmdata.openstreetmap.de/download/water-polygons-split-3857.zip
-```
+Planetiler also needs three shared inputs (water polygons, Natural Earth,
+lake centerlines). The script downloads them to `data/sources` before it runs
+Planetiler, so Planetiler itself makes no network calls. Each URL gets several
+attempts. If the primary source still fails, the script tries the next URL in
+the `SHARED_SOURCES` list at the top of `build-region.sh`. The water polygons
+fall back to the North America mirror at `www.osmdata.org`. Files that are
+already present are reused. Add more mirrors to that list if a source is
+unreliable.
 
 ### `merge-osm.sh <output-name> <geofabrik-path> ...`
 
