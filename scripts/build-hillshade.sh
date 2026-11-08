@@ -25,6 +25,11 @@ MIN_LON="$1" MIN_LAT="$2" MAX_LON="$3" MAX_LAT="$4"
 
 DEM_DIR="$REPO_DIR/data/cache/dem"
 WORK_DIR="$REPO_DIR/data/cache/hillshade"
+trap 'disk_full_hint "$REPO_DIR/data"' ERR
+
+AREA_DEG2="$(bbox_area "$MIN_LON" "$MIN_LAT" "$MAX_LON" "$MAX_LAT")"
+NEED_GB="$(python3 -c "print(max(5, int($AREA_DEG2 * 0.2 + 3)))")"
+require_free_space "$REPO_DIR/data" "$NEED_GB" "hillshade for a $AREA_DEG2 square-degree area"
 rm -rf "$WORK_DIR"
 mkdir -p "$WORK_DIR"
 

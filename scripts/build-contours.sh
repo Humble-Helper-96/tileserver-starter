@@ -43,6 +43,13 @@ esac
 
 DEM_DIR="$REPO_DIR/data/cache/dem"
 WORK_DIR="$REPO_DIR/data/cache/contours"
+trap 'disk_full_hint "$REPO_DIR/data"' ERR
+
+# Disk estimate: the elevation tiles, the feet-converted copy, the contour
+# lines, and the tile build each take space, scaling with the box area.
+AREA_DEG2="$(bbox_area "$MIN_LON" "$MIN_LAT" "$MAX_LON" "$MAX_LAT")"
+NEED_GB="$(python3 -c "print(max(8, int($AREA_DEG2 * 0.6 + 5)))")"
+require_free_space "$REPO_DIR/data" "$NEED_GB" "contours for a $AREA_DEG2 square-degree area"
 rm -rf "$WORK_DIR"
 mkdir -p "$WORK_DIR"
 

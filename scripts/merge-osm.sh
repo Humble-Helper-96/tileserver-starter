@@ -55,6 +55,12 @@ for path in "$@"; do
     mv "$dest.part" "$dest"
 done
 
+# Disk estimate: the merged copy plus Planetiler's work files and output
+# come to roughly ten times the size of the extracts.
+EXTRACT_GB="$(du -cBG "${INPUTS[@]}" | tail -1 | tr -dc '0-9')"
+NEED_GB="$(python3 -c "print(max(6, int($EXTRACT_GB * 10 + 4)))")"
+require_free_space "$REPO_DIR/data" "$NEED_GB" "merging and processing $EXTRACT_GB GB of map extracts"
+
 if [ ${#INPUTS[@]} -eq 1 ]; then
     echo "One extract only: copy it to the output file."
     cp "${INPUTS[0]}" "$OUT_FILE"

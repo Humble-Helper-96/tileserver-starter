@@ -4,6 +4,67 @@
 
 TOOLS_IMAGE="tileserver-tools"
 
+# Free space in whole GB on the drive that holds a directory.
+free_gb() {
+    df -BG --output=avail "$1" | tail -1 | tr -dc '0-9'
+}
+
+# Area of a bounding box in square degrees.
+# Arguments: MIN_LON MIN_LAT MAX_LON MAX_LAT
+bbox_area() {
+    python3 -c "print(round(max(0, $3 - $1) * max(0, $4 - $2), 1))"
+}
+
+# Stop with a clear message when a drive has less free space than a step
+# needs. The numbers are estimates with a safety margin.
+# Arguments: DIR NEEDED_GB WHAT
+require_free_space() {
+    local dir="$1" need_gb="$2" what="$3"
+    mkdir -p "$dir"
+    local avail_gb
+    avail_gb="$(free_gb "$dir")"
+    if [ "$avail_gb" -lt "$need_gb" ]; then
+        cat >&2 <<EOF
+
+ERROR: Not enough free disk space for $what.
+
+  Needed (estimate): about $need_gb GB
+  Available:         $avail_gb GB, on the drive that holds
+                     $dir
+
+What you can do:
+  - Free up space on that drive, then run the same command again.
+  - Or move this whole folder to a drive with more space.
+  - Or build a smaller area (a smaller bounding box, or fewer
+    Geofabrik areas in the region file).
+
+Files that were already downloaded are kept and reused next time.
+EOF
+        exit 1
+    fi
+    echo "Disk check: $what needs about $need_gb GB; $avail_gb GB free. OK."
+}
+
+# Called when a step fails. If the drive is (nearly) full, say so in plain
+# words, because the underlying tool errors are cryptic.
+# Argument: DIR
+disk_full_hint() {
+    local dir="$1"
+    local avail_gb
+    avail_gb="$(free_gb "$dir" 2>/dev/null || echo 999)"
+    if [ "$avail_gb" -lt 2 ]; then
+        cat >&2 <<EOF
+
+The build stopped because THE DISK IS FULL ($avail_gb GB free on the
+drive that holds $dir).
+
+Free up space, then run the same command again. Downloads that finished
+are kept and reused. Work files from the failed step can be deleted:
+  rm -rf $dir/cache/contours $dir/cache/hillshade $dir/tmp
+EOF
+    fi
+}
+
 # Run the calling script again inside the tool container.
 # The container has GDAL and Tippecanoe.
 reexec_in_tools() {

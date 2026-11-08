@@ -18,6 +18,9 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib.sh
+source "$REPO_DIR/scripts/lib.sh"
+trap 'disk_full_hint "$REPO_DIR/data"' ERR
 
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <region-file> [vector] [contours] [hillshade]" >&2
@@ -146,6 +149,9 @@ run_hillshade() {
 
 echo "Region: $REGION_NAME"
 echo "Steps:  ${STEPS[*]}"
+mkdir -p "$REPO_DIR/data"
+echo "Free disk space: $(free_gb "$REPO_DIR/data") GB on the drive that holds $REPO_DIR/data"
+echo "Each step checks its own space needs before it starts."
 for step in "${STEPS[@]}"; do
     start=$(date +%s)
     echo

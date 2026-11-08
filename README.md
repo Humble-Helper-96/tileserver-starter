@@ -21,6 +21,22 @@ Works well as a map source for TAK clients (ATAK, WinTAK, iTAK) and web maps.
 - Docker with the Compose plugin
 - Disk space for your map data (a small country is 1-2 GB; a US state can be 1-10 GB)
 
+### Disk space
+
+Building needs much more space than the finished files take. Each build
+script estimates what its step needs and stops with a clear message if the
+drive is too small. As a guide, from a six-state build (NJ, NY, PA, MD, DE,
+DC, about 64 square degrees):
+
+| Step | Finished file | Working space needed |
+|---|---|---|
+| Base map | ~1 GB | ~15 GB |
+| Contours | ~2 GB | ~40 GB |
+| Hillshade | ~0.5 GB | ~15 GB |
+
+If a build fails anyway and the drive is full, the script says so. Free up
+space and run the same command again. Finished downloads are kept and reused.
+
 ## Quick start
 
 1. Clone this repository:
@@ -183,6 +199,10 @@ See [systemd/README.md](systemd/README.md).
   Apache Arrow apt source whose signing key no longer verifies.
 - Build containers now run as the calling user, so files under `data/` are no
   longer owned by root.
+- Every build step checks free disk space first and stops with a plain
+  message if there is not enough. A step that fails on a full disk says so.
+- Fix: terrain intermediates are now tiled BigTIFFs. Before, a large region
+  could fill the disk with a feet-converted DEM dozens of times its real size.
 
 **Migration:** if you built with an earlier version, files under `data/` are
 owned by root. Run `sudo chown -R "$USER:$USER" data` once.
