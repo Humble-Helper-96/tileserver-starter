@@ -1,5 +1,5 @@
 # Tool image for the terrain build scripts.
-# It contains GDAL and Tippecanoe.
+# It contains GDAL, Tippecanoe, and Osmium.
 FROM ghcr.io/osgeo/gdal:ubuntu-full-3.9.2
 
 RUN apt-get update \
@@ -10,6 +10,7 @@ RUN apt-get update \
         zlib1g-dev \
         curl \
         ca-certificates \
+        osmium-tool \
     && git clone --depth 1 --branch 2.62.0 https://github.com/felt/tippecanoe.git /tmp/tippecanoe \
     && make -C /tmp/tippecanoe -j"$(nproc)" \
     && make -C /tmp/tippecanoe install \

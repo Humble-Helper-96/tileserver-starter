@@ -90,6 +90,39 @@ Builds `data/hillshade.mbtiles` from the same elevation data.
 The terrain scripts build a small tool container (GDAL + Tippecanoe) on first run.
 Downloaded elevation tiles stay in `data/cache/dem` for reuse.
 
+### `build-region.sh <region-file> [vector] [contours] [hillshade]`
+
+Builds all three data files for a region described in a region file.
+A region can cover several Geofabrik extracts, for example several US states.
+The script downloads each extract, merges them into one file with Osmium,
+and runs Planetiler on the merged file. Then it builds contours and hillshade
+for the region's bounding box.
+
+```bash
+./scripts/build-region.sh regions/mid-atlantic.env
+```
+
+Add step names to run only some steps:
+
+```bash
+./scripts/build-region.sh regions/mid-atlantic.env contours hillshade
+```
+
+A region file sets these values (see `regions/mid-atlantic.env`):
+
+| Variable | Meaning |
+|---|---|
+| `REGION_NAME` | Short name for the merged OSM file |
+| `GEOFABRIK_AREAS` | Geofabrik paths, for example `north-america/us/new-jersey` |
+| `BBOX` | Terrain box: `min-lon min-lat max-lon max-lat` |
+| `CONTOUR_UNITS` | `ft` or `m` (default `ft`) |
+| `PLANETILER_MEMORY` | Java heap for Planetiler (default `8g`) |
+
+### `merge-osm.sh <output-name> <geofabrik-path> ...`
+
+Downloads Geofabrik extracts to `data/sources/extracts` and merges them into
+`data/sources/<output-name>.osm.pbf`. `build-region.sh` calls it for you.
+
 ## Bring your own data
 
 You do not have to use the build scripts.
