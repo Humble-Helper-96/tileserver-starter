@@ -58,9 +58,13 @@ if [ "$UNITS" = "ft" ]; then
     echo "Step 2b: convert elevation values to feet"
     # Float32 halves the file size (gdal_calc defaults to Float64).
     # BIGTIFF=YES lifts the 4 GB TIFF limit, which large regions exceed.
+    # TILED=YES is essential: gdal_calc writes in square blocks, and with
+    # a strip-based TIFF each partial strip write appends a new compressed
+    # copy of the strip, so the file grows to many times its real size.
     gdal_calc.py -A "$WORK_DIR/dem.vrt" --calc="A*3.28084" \
         --outfile="$WORK_DIR/dem_ft.tif" --type=Float32 \
-        --co COMPRESS=DEFLATE --co BIGTIFF=YES --quiet
+        --co COMPRESS=DEFLATE --co PREDICTOR=3 --co BIGTIFF=YES \
+        --co TILED=YES --co BLOCKXSIZE=512 --co BLOCKYSIZE=512 --quiet
     DEM_INPUT="$WORK_DIR/dem_ft.tif"
 fi
 

@@ -36,11 +36,12 @@ gdalbuildvrt -q -te "$MIN_LON" "$MIN_LAT" "$MAX_LON" "$MAX_LAT" \
     "$WORK_DIR/dem.vrt" "$DEM_DIR"/*.tif
 # BIGTIFF=YES lifts the 4 GB TIFF limit, which large regions exceed.
 gdalwarp -q -t_srs EPSG:3857 -r bilinear \
-    -co COMPRESS=DEFLATE -co BIGTIFF=YES "$WORK_DIR/dem.vrt" "$WORK_DIR/dem_3857.tif"
+    -co COMPRESS=DEFLATE -co PREDICTOR=3 -co BIGTIFF=YES -co TILED=YES \
+    "$WORK_DIR/dem.vrt" "$WORK_DIR/dem_3857.tif"
 
 echo "Step 3/4: compute the hillshade"
 gdaldem hillshade -q -z 1 -az 315 -alt 45 -compute_edges \
-    -co COMPRESS=DEFLATE -co BIGTIFF=YES \
+    -co COMPRESS=DEFLATE -co BIGTIFF=YES -co TILED=YES \
     "$WORK_DIR/dem_3857.tif" "$WORK_DIR/hillshade.tif"
 
 echo "Step 4/4: write the raster tiles"
