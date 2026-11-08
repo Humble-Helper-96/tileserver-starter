@@ -28,6 +28,7 @@ mkdir -p "$REPO_DIR/data"
 
 # Planetiler writes the mbtiles file and keeps downloaded sources in data/sources.
 docker run --rm \
+    --user "$(id -u):$(id -g)" \
     -e JAVA_TOOL_OPTIONS="-Xmx$MEMORY" \
     -v "$REPO_DIR/data":/data \
     ghcr.io/onthegomap/planetiler:latest \

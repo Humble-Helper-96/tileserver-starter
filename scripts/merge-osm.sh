@@ -63,6 +63,6 @@ else
     osmium merge --overwrite -o "$OUT_FILE" "${INPUTS[@]}"
 fi
 
-echo "Data bounding box:"
+echo "Data bounding box (this reads the whole file, allow a minute):"
 osmium fileinfo -e -g data.bbox "$OUT_FILE" || true
 echo "Done. Output: $OUT_FILE"

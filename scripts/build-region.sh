@@ -125,6 +125,7 @@ run_vector() {
     # takes the bounds from the merged OSM data, which can be far larger
     # (extracts include complete ways and relations that reach outside).
     docker run --rm \
+        --user "$(id -u):$(id -g)" \
         -e JAVA_TOOL_OPTIONS="-Xmx$PLANETILER_MEMORY" \
         -v "$REPO_DIR/data":/data \
         ghcr.io/onthegomap/planetiler:latest \

@@ -33,6 +33,8 @@ Works well as a map source for TAK clients (ATAK, WinTAK, iTAK) and web maps.
 2. Build the base map for your region.
    Use an area name from [Geofabrik](https://download.geofabrik.de).
    Example with Switzerland:
+   (For a region that spans several Geofabrik areas, such as a group of
+   US states, use `build-region.sh` instead. See "Build scripts" below.)
 
    ```bash
    ./scripts/build-vector.sh switzerland
@@ -168,6 +170,22 @@ For higher resolution screens, use `.../{z}/{x}/{y}@2x.png`.
 See [systemd/README.md](systemd/README.md).
 
 ## Changelog
+
+### v0.3
+
+- New `build-region.sh` and `merge-osm.sh`: build all three data files for a
+  region that spans several Geofabrik extracts, from one region file.
+  First region file: `regions/mid-atlantic.env`.
+- `build-region.sh` downloads Planetiler's shared inputs itself, with retries
+  and a fallback mirror for the water polygons.
+- Planetiler output is limited to the region's bounding box.
+- Fix: the tool image failed to build because the GDAL base image lists an
+  Apache Arrow apt source whose signing key no longer verifies.
+- Build containers now run as the calling user, so files under `data/` are no
+  longer owned by root.
+
+**Migration:** if you built with an earlier version, files under `data/` are
+owned by root. Run `sudo chown -R "$USER:$USER" data` once.
 
 ### v0.2
 

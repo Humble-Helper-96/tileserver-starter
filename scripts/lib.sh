@@ -12,7 +12,11 @@ reexec_in_tools() {
     fi
     echo "Building the tool image (first run can take some minutes)..."
     docker build -q -t "$TOOLS_IMAGE" "$REPO_DIR/tools"
+    # Run as the calling user so that files under data/ are not owned by
+    # root. Host-side steps (curl, rm) must be able to write there too.
     exec docker run --rm \
+        --user "$(id -u):$(id -g)" \
+        -e HOME=/tmp \
         -e IN_TOOLS=1 \
         -v "$REPO_DIR":/work \
         -w /work \
